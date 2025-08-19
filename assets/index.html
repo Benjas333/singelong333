@@ -10,9 +10,9 @@
             --spotify-darker-color: #1A7C3C;
             --font-family: "Montserrat", sans-serif;
 
-            --wave-duration: 1.75s;
-            --wave-amplitude: 5px;
-            --wave-delay-step: 0.03s;
+            --wave-duration: 1s;
+            --wave-amplitude: 10px;
+            --wave-delay-step: 0.08s;
             /* --wave-ease: cubic-bezier(.2,.9,.3,.95); */
             --wave-ease: ease-in-out
         }
@@ -90,7 +90,7 @@
         
         .actual-lyric .char_span {
             /* display: inline-block; */
-            animation: wave var(--wave-duration) var(--wave-ease) infinite;
+            animation: wave var(--wave-duration) var(--wave-ease);
             /* cicle 1.3s ease-in-out infinite; */
             /* white-space: pre; */
             color: var(--spotify-color);
@@ -120,11 +120,11 @@
 
         h2 {
             margin: 10px;
-            font-size: 2em;
+            font-size: 1.8em;
         }
 
         h3 {
-            font-size: 1.8em;
+            font-size: 1.5em;
         }
 
         #particles-js {
@@ -204,7 +204,7 @@
                 element.id = String(time)
                 element.classList.add('title', 'text-dark')
                 const match = text.match(/(^\([^)]+\)|\([^)]+\)$)/);
-                element.textContent = (match ? text.replace(match[1], '').trim() : text) || '♪ ♫ ♪'
+                element.textContent = (match ? text.replace(match[1], '').trim() : text)
                 screen.appendChild(element)
 
                 if (!match) return;
