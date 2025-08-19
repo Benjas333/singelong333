@@ -6,7 +6,15 @@
         :root {
             --menu-color: #00000045;
             --lyrics-color: white;
+            --spotify-color: #24BB59;
+            --spotify-darker-color: #1A7C3C;
             --font-family: "Montserrat", sans-serif;
+
+            --wave-duration: 1.75s;
+            --wave-amplitude: 5px;
+            --wave-delay-step: 0.03s;
+            /* --wave-ease: cubic-bezier(.2,.9,.3,.95); */
+            --wave-ease: ease-in-out
         }
 
         html,
@@ -28,6 +36,12 @@
             backdrop-filter: blur(64px);
         }
 
+        #console {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
         #error {
             padding: 0 2rem 0 2rem;
         }
@@ -40,6 +54,52 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
             padding: 0 2rem 0 2rem;
+            max-width: 90vw;
+        }
+
+        /* .title {
+            display: flex;
+            flex-wrap: wrap;
+            white-space: pre;
+            overflow-wrap: break-word;
+            max-width: 100vw;
+        } */
+
+        .sub-title {
+            display: flex;
+            flex-wrap: wrap;
+            text-align: right;
+            /* opacity: inherit; */
+            justify-content: flex-end;
+            /* white-space: pre; */
+            /* overflow-wrap: break-word; */
+            /* max-width: 100vw; */
+        }
+        
+        .actual-lyric {
+            display: flex;
+            flex-wrap: wrap;
+            /* white-space: pre; */
+        }
+
+        .word_span {
+            display: flex;
+            /* width: fit-content; */
+            margin-right: 10px;
+        }
+        
+        .actual-lyric .char_span {
+            /* display: inline-block; */
+            animation: wave var(--wave-duration) var(--wave-ease) infinite;
+            /* cicle 1.3s ease-in-out infinite; */
+            /* white-space: pre; */
+            color: var(--spotify-color);
+            text-shadow: 0px 0px 20px var(--spotify-color);
+        }
+
+        .actual-lyric .char_span:nth-child(odd),
+        .actual-lyric .char_span:nth-child(even) {
+            animation-delay: calc(var(--i) * var(--wave-delay-step));
         }
 
         #lyrics-content::-webkit-scrollbar {
@@ -47,16 +107,24 @@
         }
 
         .text-dark {
+            display: flex;
+            flex-wrap: wrap;
             opacity: 0.2;
         }
 
         .text-light {
+            display: flex;
+            flex-wrap: wrap;
             opacity: 1;
         }
 
         h2 {
             margin: 10px;
             font-size: 2em;
+        }
+
+        h3 {
+            font-size: 1.8em;
         }
 
         #particles-js {
@@ -67,12 +135,25 @@
             bottom: 0;
             top: 0;
         }
+
+        @keyframes wave {
+            0%   { transform: translateY(0); }
+            50%  { transform: translateY(calc(-1 * var(--wave-amplitude))); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes cicle {
+            0%   { text-shadow: 0px 0px 10px var(--spotify-darker-color); }
+            50%  { text-shadow: 0px 0px 10px var(--spotify-color); }
+            100% { text-shadow: 0px 0px 10px var(--spotify-darker-color); }
+        }
     </style>
 </head>
 
 <body>
     <div id="particles-js"></div>
     <div id="music-player">
+        <div id="console"></div>
         <div id="error">
             <h2 class="text-light" style="margin: 0px">Hmmmm</h2>
             <h4 class="text-dark" id="message" style="opacity: 0.5"></h4>
@@ -84,77 +165,260 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script type="text/javascript">
+        let globalLyrics = [];
+        let currentIndex = -1;
+        let lyricsTimer = null;
+        let globalProgress = 0;
+        let old_lyrics = '';
+
+        const updateConsole = msg => {
+            const el = document.getElementById('console')
+            el.innerHTML = `${msg}<br>${el.innerHTML}`
+        }
+        
         function extractAndConvertToMilliseconds(text) {
-            // Cari pola waktu dalam format [MM:SS.MS] di dalam teks
             const timePattern = /\[(\d{2}):(\d{2})\.(\d{2})\]/;
             const match = text.match(timePattern);
 
-            if (match) {
-                const [, minutes, seconds, milliseconds] = match;
+            if (!match) return -1
 
-                // Konversi waktu ke milidetik
-                const minutesToMilliseconds = parseInt(minutes, 10) * 60 * 1000;
-                const secondsToMilliseconds = parseInt(seconds, 10) * 1000;
-                const millisecondsValue = parseInt(milliseconds, 10);
+            const [, minutes, seconds, centiseconds] = match;
+            return (parseInt(minutes, 10) * 60 * 1000) +
+                (parseInt(seconds, 10) * 1000) +
+                (parseInt(centiseconds, 10) * 10);
+        }
 
-                // Hitung total milidetik
-                const totalMilliseconds = minutesToMilliseconds + secondsToMilliseconds + millisecondsValue;
+        function prepareLyrics(lyrics) {
+            const lines = lyrics.split("\n")
+            globalLyrics = lines.map(line => {
+                const time = extractAndConvertToMilliseconds(line);
+                const lyric = time !== -1 ? line.split("]")[1].trim() : line.trim();
+                return { time: time === -1 ? null : time, text: lyric || '♪ ♫ ♪' };
+            });
 
-                return totalMilliseconds;
+            const screen = document.getElementById("lyrics-content")
+            screen.innerHTML = ''
+
+            globalLyrics.forEach(({ time, text }) => {
+                const element = document.createElement('h2');
+                element.id = String(time)
+                element.classList.add('title', 'text-dark')
+                const match = text.match(/(^\([^)]+\)|\([^)]+\)$)/);
+                element.textContent = (match ? text.replace(match[1], '').trim() : text) || '♪ ♫ ♪'
+                screen.appendChild(element)
+
+                if (!match) return;
+                const subtitle = document.createElement('h3');
+                subtitle.id = `${time}-subtitle`
+                subtitle.classList.add('sub-title', 'text-dark')
+                subtitle.textContent = match[1]
+                screen.appendChild(subtitle)
+            });
+        }
+
+        function setActiveLyric() {
+            let index = -1
+            globalLyrics.forEach(({ time, text }, idx) => {
+                if (!time) return;
+                const item = document.getElementById(`${time}`)
+                if (globalProgress < time) {
+                    item.classList.remove('text-light')
+                    item.classList.add('text-dark')
+                    const sub = document.getElementById(`${time}-subtitle`)
+                    if (!sub) return;
+
+                    sub.classList.add('text-dark')
+                    sub.classList.remove('text-light')
+                    return;
+                }
+
+                item.classList.remove('text-dark')
+                item.classList.add('text-light')
+                index = idx
+                const sub = document.getElementById(`${time}-subtitle`)
+                if (!sub) return;
+
+                sub.classList.remove('text-dark')
+                sub.classList.add('text-light')
+            })
+            
+            if (index < 0) document.getElementById('lyrics-content').scrollTo({ top: 0, behavior: 'smooth' });
+            if (index == currentIndex) return;
+
+            const lyric = globalLyrics[index];
+            if (!lyric || !lyric.time) return;
+
+            const prev = document.querySelector('.actual-lyric');
+            const node = document.getElementById(lyric.time);
+            
+            document.getElementById('lyrics-content').scrollTo({
+                top: node.offsetTop - (document.getElementById('lyrics-content').clientHeight / 2),
+                behavior: 'smooth'
+            });
+
+            currentIndex = index;
+
+            if (prev && prev.id === node.id) return;
+            
+            if (prev) {
+                prev.classList.remove('actual-lyric')
+                const prev_sub = document.getElementById(`${prev.id}-subtitle`)
+                if (prev_sub) prev_sub.classList.remove('actual-lyric')
+            }
+
+            node.classList.add('actual-lyric');
+            wrapWaveSpansFor(node);
+        }
+
+        function scheduleNextLyric() {
+            clearTimeout(lyricsTimer);
+            if (!globalLyrics.length) {
+                lyricsTimer = setTimeout(() => {
+                    scheduleNextLyric();
+                }, 1000)
+                return;
+            }
+
+            if (currentIndex + 1 >= globalLyrics.length) {
+                lyricsTimer = setTimeout(() => {
+                    scheduleNextLyric();
+                }, 1000)
+                return;
+            }
+
+            const nextLyric = globalLyrics[currentIndex + 1];
+            if (!nextLyric.time) return;
+            const delay = nextLyric.time - globalProgress;
+
+            if (delay <= 0) {
+                setActiveLyric();
+                scheduleNextLyric();
             } else {
-                throw new Error('Format waktu tidak valid.');
+                lyricsTimer = setTimeout(() => {
+                    setActiveLyric();
+                    scheduleNextLyric();
+                }, delay);
             }
         }
 
-        async function playLyrics(lyrics, milliseconds) {
-            let cleaned = []
-            const array = lyrics.split("\n")
+        // async function playLyrics(lyrics, milliseconds) {
+        //     let cleaned = []
+        //     const array = lyrics.split("\n")
 
 
-            array.forEach((items) => {
-                const found = items.match(/(\[[0-9])\w+/g)
-                if (found) cleaned.push(items);
-            })
+        //     array.forEach((items) => {
+        //         const found = items.match(/(\[[0-9])\w+/g)
+        //         if (found) cleaned.push(items);
+        //     })
 
-            let contents = ''
+        //     let contents = ''
 
-            cleaned.forEach((items) => {
-                const id = extractAndConvertToMilliseconds(items)
-                const lyric = items.split(']')[1].trim();
-                contents += '<h2 id=' + id + ' class="text-dark">' + lyric + '</h2>'
-            })
+        //     cleaned.forEach((items) => {
+        //         const id = extractAndConvertToMilliseconds(items)
+        //         const lyric = items.split(']')[1].trim();
+        //         let subtitle = '';
+        //         let subtext = '';
+        //         const match = lyric.match(/(^\([^)]+\)|\([^)]+\)$)/);
+        //         if (match) {
+        //             subtext = match[1]
+        //             subtitle = `<h3 id=${id} class="text-dark sub-title">${subtext}</h3>`
+        //         }
+        //         contents += `<h2 id=${id} class="text-dark">${lyric.replace(subtext, '').trim()}${subtitle}</h2>`
+        //     })
 
-            document.getElementById('lyrics-content').innerHTML = contents;
+        //     document.getElementById('lyrics-content').innerHTML = contents;
 
-            let found = 0;
-            cleaned.forEach((items) => {
-                const targetMillisecond = extractAndConvertToMilliseconds(items)
-                if (milliseconds >= targetMillisecond) {
-                    document.getElementById('' + targetMillisecond + '').classList.remove('text-dark')
-                    document.getElementById('' + targetMillisecond + '').classList.add('text-light')
-                    found = targetMillisecond;
+        //     let found = 0;
+        //     cleaned.forEach((items) => {
+        //         const targetMillisecond = extractAndConvertToMilliseconds(items)
+        //         if (milliseconds >= targetMillisecond) {
+        //             document.getElementById('' + targetMillisecond + '').classList.remove('text-dark')
+        //             document.getElementById('' + targetMillisecond + '').classList.add('text-light')
+        //             found = targetMillisecond;
+        //         }
+        //     })
+
+        //     const prev = document.querySelectorAll('.actual-lyric');
+        //     prev.forEach(el => {
+        //         if (el.id === String(found)) return;
+                
+        //         el.classList.remove('actual-lyric');
+        //     })
+
+        //     const current = document.getElementById(found)
+        //     if (!current) return
+
+        //     current.classList.add('actual-lyric');
+        //     wrapWaveSpansFor(current);
+
+        //     document.getElementById('lyrics-content').scrollTo({ top: current.offsetTop - (document.getElementById('lyrics-content').clientHeight / 2) })
+        // }
+
+        function wrapWaveSpansFor(node) {
+            if (!node) return;
+            if (node.dataset.waved) return;
+
+            let offset = 0
+            const genList = (word, element) => {
+                for (let i = 0 + offset; i < word.length + offset; i++) {
+                    const ch = word[i - offset];
+                    const span = document.createElement('span');
+                    span.textContent = ch;
+                    span.classList.add('char_span')
+                    span.style.setProperty('--i', i);
+                    element.appendChild(span);
                 }
-            })
+                offset += word.length
+            }
 
-            document.getElementById('lyrics-content').scrollTo({ top: document.getElementById(found).offsetTop - (document.getElementById('lyrics-content').clientHeight / 2) })
+            const text = node.textContent ?? '';
+            node.innerHTML = '';
+            text.split(' ').forEach(word => {
+                const word_span = document.createElement('span');
+                word_span.classList.add('word_span');
+                genList(word, word_span);
+                node.appendChild(word_span)
+            })
+            const subtitle = document.getElementById(`${node.id}-subtitle`)
+            if (subtitle) {
+                subtitle.classList.add('actual-lyric')
+                offset = 0
+                const sub_text = subtitle.textContent ?? '';
+                subtitle.innerHTML = '';
+                sub_text.split(' ').forEach(word => {
+                    const word_span = document.createElement('span');
+                    word_span.classList.add('word_span');
+                    genList(word, word_span);
+                    subtitle.appendChild(word_span)
+                })
+            }
+            node.dataset.waved = '1';
         }
 
 
-        window.addEventListener(
-            "message",
-            (event) => {
-                if (event.data.command == 'error') {
-                    document.getElementById('lyrics').style.display = 'none';
-                    document.getElementById('error').style.display = 'block';
-                    document.getElementById('message').innerText = event.data.message;
-                } else {
-                    document.getElementById('lyrics').style.display = 'block';
-                    document.getElementById('error').style.display = 'none';
-                    playLyrics(event.data.content.lyrics, event.data.content.milliseconds);
-                }
-            },
-            false,
-        );
+        window.addEventListener("message", (event) => {
+            if (event.data.command == 'error') {
+                document.getElementById('lyrics').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('message').innerText = event.data.message;
+                return;
+            }
+            document.getElementById('lyrics').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            const { lyrics, milliseconds } = event.data.content;
+
+            if (old_lyrics !== lyrics ) {
+                prepareLyrics(lyrics);
+                currentIndex = -1;
+                old_lyrics = lyrics;
+            }
+            globalProgress = milliseconds;
+            if (currentIndex >= 0 && globalProgress < globalLyrics[currentIndex].time || 0) {
+                currentIndex = -1
+            }
+            scheduleNextLyric(); // TODO: test
+        }, false);
+        // scheduleNextLyric();
 
 
         const partJson = {

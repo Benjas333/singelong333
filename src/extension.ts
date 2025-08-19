@@ -11,6 +11,7 @@ import { Lyric } from './types/lyric';
 let extensionContext: vscode.ExtensionContext;
 let provider: SingeLongViewProvider;
 let extensionUri: vscode.Uri;
+// let first = true;
 
 export function activate(context: vscode.ExtensionContext) {
 	// making private context accessed globally;
@@ -50,11 +51,12 @@ const authorize = async () => {
 		extensionContext.globalState.update("code", code);
 		await requestAccessToken();
 
-		vscode.window.showInformationMessage('SingeLong: Spotify authorized successfully');
+		vscode.window.showInformationMessage('SingeLong333: Spotify authorized successfully');
 		res.send(content);
+		server.close();
 	});
 
-	app.listen(9878);
+	const server = app.listen(9878);
 
 	// open url to retrive spotify authorization code
 	spotify.getAuthorizationCode();
@@ -99,46 +101,49 @@ const listener = async () => {
 		return;
 	}
 
-	if (isTokenExist) {
-		auth = await requestAccessToken()
-		let lyricData;
-		let lyricCoolDown = extensionContext.globalState.get<number>('cooldown') || 0;
-		let lyricState = extensionContext.globalState.get<Lyric>('lyric');
-		const playing = await spotify.getNowPlaying(auth.accessToken!);
-		const playingState = extensionContext.globalState.get<Playing>('playing');
-		const timestamp = Date.now();
+	auth = await requestAccessToken()
+	let lyricData;
+	let lyricCoolDown = extensionContext.globalState.get<number>('cooldown') || 0;
+	let lyricState = extensionContext.globalState.get<Lyric>('lyric');
+	const playing = await spotify.getNowPlaying(auth.accessToken!);
+	const playingState = extensionContext.globalState.get<Playing>('playing');
+	const timestamp = Date.now();
 
-		if (playing.exception) {
-			return provider.view?.webview.postMessage({ 'command': 'error', 'message': playing.exception.message });
-		}
-
-		const retrieveLyrics = (playingState?.id != playing.id && lyricState?.id != playing.id)
-
-		if (retrieveLyrics && timestamp >= lyricCoolDown) {
-			extensionContext.globalState.update('cooldown', Date.now() + 5000);
-			lyricData = await lyric.getLyric(playing);
-			
-			extensionContext.globalState.update('lyric', lyricData);
-			lyricState = lyricData;
-			
-			if (lyricData.exception) {
-				return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricData.exception.message });
-			}
-		}
-
-		if (lyricState?.exception) {
-			return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricState?.exception.message });
-		}
-
-		extensionContext.globalState.update('playing', playing);
-		provider.view?.webview.postMessage({
-			'command': 'updatePlayer',
-			'content': {
-				'lyrics': lyricData?.lyric || lyricState?.lyric,
-				'milliseconds': playing.currentProgress
-			}
-		})
+	if (playing.exception) {
+		return provider.view?.webview.postMessage({ 'command': 'error', 'message': playing.exception.message });
 	}
+
+	const retrieveLyrics = (playingState?.id !== playing.id || lyricState?.id !== playing.id)
+
+	if (retrieveLyrics && timestamp >= lyricCoolDown) {
+		extensionContext.globalState.update('cooldown', Date.now() + 5000);
+		lyricData = await lyric.romanize(await lyric.getLyric(playing));
+		
+		extensionContext.globalState.update('lyric', lyricData);
+		lyricState = lyricData;
+		
+		if (lyricData.exception) {
+			return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricData.exception.message });
+		}
+	}
+
+	if (lyricState?.exception) {
+		return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricState?.exception.message });
+	}
+
+	extensionContext.globalState.update('playing', playing);
+	// if (first || (retrieveLyrics && timestamp >= lyricCoolDown)) {
+	// 	first = false;
+	// 	// console.log(playing)
+	// 	// console.log(lyricData || lyricState)
+	// }
+	provider.view?.webview.postMessage({
+		'command': 'updatePlayer',
+		'content': {
+			'lyrics': lyricData?.lyric || lyricState?.lyric,
+			'milliseconds': playing.currentProgress
+		}
+	})
 }
 
 export function deactivate() { }

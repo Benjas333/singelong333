@@ -1,9 +1,21 @@
 import axios from "axios";
 import { Playing } from "../types/playing";
 import { Lyric } from "../types/lyric";
+import Kuroshiro from "kuroshiro";
+import KuromojiAnalyzer from "kuroshiro-analyzer-kuromoji";
+import * as vscode from 'vscode';
 
 const msxmatchToken = '2005218b74f939209bda92cb633c7380612e14cb7fe92dcd6a780f';
 const msxmatchUrl = 'https://apic-desktop.musixmatch.com/ws/1.1/macro.subtitles.get?format=json&namespace=lyrics_synched&subtitle_format=lrc&app_id=web-desktop-app-v1.0'
+let kuroshiro: Kuroshiro | null = null
+
+const getKuroshiro = async (): Promise<Kuroshiro> => {
+    if (kuroshiro !== null) return kuroshiro
+
+    kuroshiro = new Kuroshiro()
+    await kuroshiro.init(new KuromojiAnalyzer())
+    return kuroshiro
+}
 
 export const getLyric = async (playing: Playing): Promise<Lyric> => {
     try {
@@ -25,28 +37,71 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         });
 
         const data = response.data;
-        const subtitleList = data.message.body.macro_calls['track.subtitles.get'].message.body.subtitle_list
-        if (subtitleList.length > 0) {
-            if (subtitleList[0].subtitle.subtitle_body) {
-                console.log("LYRICS FROM MUSIXMATCH");
-                return { id: playing.id, lyric: subtitleList[0].subtitle.subtitle_body }
+        console.log(data);
+
+        const body = data.message.body.macro_calls['track.subtitles.get'].message.body
+        if (body) {
+            const subtitleList = body.subtitle_list
+            if (subtitleList && subtitleList.length > 0) {
+                if (subtitleList[0].subtitle.subtitle_body) {
+                    console.log("LYRICS FROM MUSIXMATCH");
+                    return { id: playing.id, lyric: subtitleList[0].subtitle.subtitle_body }
+                }
             }
         }
 
 
-        // Fetch Own API
-        const own = await axios.get(`https://lyrics-api.qolbudr.workers.dev/?artist=${playing.artistName}&name=${playing.songTitle}`)
-        const ownData = own.data;
-        if (ownData != "Not found") {
-            console.log("LYRICS FROM OWN API");
-            return { id: playing.id, lyric: ownData }
+        // Fetch LRCLIB
+        const url = `https://lrclib.net/api/search?artist_name=${playing.artistName?.replaceAll(' ', '+')}&track_name=${playing.songTitle?.replaceAll(' ', '+')}`
+        console.log(`Requesting lyrics to: ${url}`)
+        const lrclib = await axios.get(url)
+        let lrclib_song: string | null = null;
+        const songs = lrclib.data;
+        console.log(songs);
+        for (const song of songs) {
+            if (!song.syncedLyrics) continue
+            lrclib_song = song.syncedLyrics as string
+            break
+        }
+        if (!lrclib_song) {
+            for (const song of songs) {
+                if (!song.plainLyrics ) continue
+                lrclib_song = song.plainLyrics as string
+                break
+            }
+        }
+        if (lrclib_song) {
+            console.log("LYRICS FROM LRCLIB API");
+            return { id: playing.id, lyric: lrclib_song }
         }
 
 
-        throw 'Cannot get lyric for playing song';
-    } catch (e) {
-        return { id: playing.id, exception: { code: 404, message: 'Cannot get lyric for playing song' } };
+        throw 'Not found in any lyrics provider';
+    } catch (e: any) {
+        return { id: playing.id, exception: { code: 404, message: `Cannot get lyric for playing song: ${playing.songTitle} (${playing.artistName}) ${e?.stack ?? e}` } };
     }
+}
+
+export const romanize = async (lyric: Lyric): Promise<Lyric> => {
+    if (lyric.exception || !lyric.lyric) return lyric
+
+    const kuro = await getKuroshiro()
+    const lines = lyric.lyric.split('\n')
+    const convertedLines = await Promise.all(
+        lines.map(async (line) => {
+            const match = line.trim().match(/\[\d+:\d+.\d+\] (.*)/)
+            if (match === null) return line
+            if (!Kuroshiro.Util.hasJapanese(match[1])) return line
+            try {
+                return line.replace(match[1], await kuro.convert(match[1], { to: 'romaji', mode: 'spaced', romajiSystem: 'passport' }))
+            } catch (error) {
+                vscode.window.showWarningMessage(`${error}`)
+                return line
+            }
+        })
+    )
+    lyric.lyric = convertedLines.join('\n');
+    return lyric
 }
 
 const fetchNetease = async (playing: Playing): Promise<Lyric> => {

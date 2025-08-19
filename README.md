@@ -1,6 +1,6 @@
 <div align="center">
     <img src="./assets/images/icon.png" width="128"  style="display: block; margin: 0 auto"/>
-    <h1>SingeLong</h1>
+    <h1>SingeLong333</h1>
     <p>VSCode extension to singelong (read: sing along) played music connected with your spotify</p>
 </div>
 
