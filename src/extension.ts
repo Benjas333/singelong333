@@ -105,14 +105,13 @@ const listener = async () => {
 		let lyricCoolDown = extensionContext.globalState.get<number>('cooldown') || 0;
 		let lyricState = extensionContext.globalState.get<Lyric>('lyric');
 		const playing = await spotify.getNowPlaying(auth.accessToken!);
-		const playingState = extensionContext.globalState.get<Playing>('playing');
 		const timestamp = Date.now();
 
 		if (playing.exception) {
 			return provider.view?.webview.postMessage({ 'command': 'error', 'message': playing.exception.message });
 		}
 
-		const retrieveLyrics = (playingState?.id != playing.id && lyricState?.id != playing.id)
+		const retrieveLyrics = (lyricState?.id != playing.id)
 
 		if (retrieveLyrics && timestamp >= lyricCoolDown) {
 			extensionContext.globalState.update('cooldown', Date.now() + 5000);
@@ -129,8 +128,7 @@ const listener = async () => {
 		if (lyricState?.exception) {
 			return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricState?.exception.message });
 		}
-
-		extensionContext.globalState.update('playing', playing);
+		
 		provider.view?.webview.postMessage({
 			'command': 'updatePlayer',
 			'content': {

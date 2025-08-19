@@ -15,31 +15,32 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         }
 
         // Fetch MusixMatch
-        const msxmatchParam = `&q_artist=${playing.artistName}&q_track=${playing.songTitle}&usertoken=${msxmatchToken}`
-        const finalUrl = msxmatchUrl + msxmatchParam;
-        const response = await axios.get(finalUrl, {
-            headers: {
-                authority: "apic-desktop.musixmatch.com",
-                cookie: "x-mxm-token-guid=",
+        try {
+            const msxmatchParam = `&q_artist=${playing.artistName}&q_track=${playing.songTitle}&usertoken=${msxmatchToken}`
+            const finalUrl = msxmatchUrl + msxmatchParam;
+            const response = await axios.get(finalUrl, {
+                headers: {
+                    authority: "apic-desktop.musixmatch.com",
+                    cookie: "x-mxm-token-guid=",
+                }
+            });
+
+            const data = response.data;
+            const subtitleList = data.message.body.macro_calls['track.subtitles.get'].message.body.subtitle_list
+            if (subtitleList.length > 0) {
+                if (subtitleList[0].subtitle.subtitle_body) {
+                    console.log("LYRICS FROM MUSIXMATCH");
+                    return { id: playing.id, lyric: subtitleList[0].subtitle.subtitle_body }
+                }
             }
-        });
-
-        const data = response.data;
-        const subtitleList = data.message.body.macro_calls['track.subtitles.get'].message.body.subtitle_list
-        if (subtitleList.length > 0) {
-            if (subtitleList[0].subtitle.subtitle_body) {
-                console.log("LYRICS FROM MUSIXMATCH");
-                return { id: playing.id, lyric: subtitleList[0].subtitle.subtitle_body }
+        } catch {
+            // Fetch Own API
+            const own = await axios.get(`https://lyrics-api.qolbudr.workers.dev/?artist=${playing.artistName}&name=${playing.songTitle}`)
+            const ownData = own.data;
+            if (ownData != "Not found") {
+                console.log("LYRICS FROM OWN API");
+                return { id: playing.id, lyric: ownData }
             }
-        }
-
-
-        // Fetch Own API
-        const own = await axios.get(`https://lyrics-api.qolbudr.workers.dev/?artist=${playing.artistName}&name=${playing.songTitle}`)
-        const ownData = own.data;
-        if (ownData != "Not found") {
-            console.log("LYRICS FROM OWN API");
-            return { id: playing.id, lyric: ownData }
         }
 
 
