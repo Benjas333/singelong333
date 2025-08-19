@@ -75,6 +75,14 @@
             /* overflow-wrap: break-word; */
             /* max-width: 100vw; */
         }
+
+        .centered {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            text-align: center;
+            font-size: 2.2em;
+        }
         
         .actual-lyric {
             display: flex;
@@ -203,6 +211,7 @@
                 const element = document.createElement('h2');
                 element.id = String(time)
                 element.classList.add('title', 'text-dark')
+                if (text === '♪ ♫ ♪') element.classList.add('centered')
                 const match = text.match(/(^\([^)]+\)|\([^)]+\)$)/);
                 element.textContent = (match ? text.replace(match[1], '').trim() : text)
                 screen.appendChild(element)
@@ -365,6 +374,10 @@
                     const span = document.createElement('span');
                     span.textContent = ch;
                     span.classList.add('char_span')
+                    if (['♪', '♫'].includes(ch)) {
+                        span.style.animationIterationCount = 'infinite';
+                        span.style.animationDuration = '2s';
+                    }
                     span.style.setProperty('--i', i);
                     element.appendChild(span);
                 }
