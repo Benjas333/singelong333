@@ -6,7 +6,7 @@ import { Playing } from "../types/playing";
 
 const basic: string = 'MWM4NDZmNGMxNzUwNDAxNDljMjQ0MDRhZjE3YmQ3OGE6Y2UxYTNjMjVhOGRkNDNhM2E3MzQ2NGIwN2VjZjA4ZTI=';
 export const clientId: string = '1c846f4c175040149c24404af17bd78a';
-export const redirectUri: string = 'http://localhost:9878/callback';
+export const redirectUri: string = 'http://127.0.0.1:9878/callback';
 
 const refreshToken = async (refreshToken: string): Promise<Auth> => {
     try {
