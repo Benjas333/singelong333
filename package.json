@@ -34,6 +34,7 @@
     "views": {
       "singelong-activitybar": [
         {
+          "icon": "assets/images/icon-logo.svg",
           "type": "webview",
           "id": "singelong.openview",
           "name": "SingeLong333"
@@ -59,7 +60,11 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "webpack_compile": "webpack --mode development",
+    "webpack_watch": "webpack --mode development --watch",
+    "webpack_vscode:prepublish": "npm run package",
+    "webpack_package": "webpack --mode production --devtool hidden-source-map"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
@@ -71,7 +76,10 @@
     "@vscode/test-electron": "^2.4.1",
     "esbuild": "^0.25.9",
     "eslint": "^9.9.1",
-    "typescript": "^5.5.4"
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.5.4",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@types/express": "^4.17.21",
