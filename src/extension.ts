@@ -113,7 +113,7 @@ const listener = async () => {
 		return provider.view?.webview.postMessage({ 'command': 'error', 'message': playing.exception.message });
 	}
 
-	const retrieveLyrics = (playingState?.id !== playing.id || lyricState?.id !== playing.id)
+	const retrieveLyrics = (lyricState?.id !== playing.id)
 
 	if (retrieveLyrics && timestamp >= lyricCoolDown) {
 		extensionContext.globalState.update('cooldown', Date.now() + 5000);
