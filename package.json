@@ -2,7 +2,7 @@
   "name": "singelong333",
   "displayName": "SingeLong333",
   "description": "VSCode extension to singelong (read: sing along) played music connected with your spotify",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "engines": {
     "vscode": "^1.78.1"
   },
