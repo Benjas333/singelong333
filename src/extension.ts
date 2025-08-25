@@ -5,13 +5,13 @@ import { SingeLongViewProvider } from './panel/panel';
 import * as spotify from './utils/spotify';
 import * as lyric from './utils/lyric';
 import { Auth } from './types/auth';
-import { Playing } from './types/playing';
 import { Lyric } from './types/lyric';
 
 let extensionContext: vscode.ExtensionContext;
 let provider: SingeLongViewProvider;
 let extensionUri: vscode.Uri;
 // let first = true;
+let alreadyFetchingLyrics = false;
 
 export function activate(context: vscode.ExtensionContext) {
 	// making private context accessed globally;
@@ -20,20 +20,19 @@ export function activate(context: vscode.ExtensionContext) {
 	extensionUri = context.extensionUri;
 
 	// define authorize command in vscode
-	let login = vscode.commands.registerCommand('singelong.authorize', () => authorize());
+	const login = vscode.commands.registerCommand('singelong333.authorize', () => authorize());
 	context.subscriptions.push(login);
 
 	// define logout command in vscode
-	let logout = vscode.commands.registerCommand('singelong.logout', () => signOut());
+	const logout = vscode.commands.registerCommand('singelong333.logout', () => signOut());
 	context.subscriptions.push(logout);
 
 	// creating panel
-	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(
-			SingeLongViewProvider.viewType,
-			provider
-		)
-	);
+	const panelProvider = vscode.window.registerWebviewViewProvider(SingeLongViewProvider.viewType, provider)
+	context.subscriptions.push(panelProvider);
+
+	const reload = vscode.commands.registerCommand('singelong333.reload-panel', () => provider.reloadContent())
+	context.subscriptions.push(reload);
 
 	// listen updates
 	setInterval(listener, 1000)
@@ -102,11 +101,10 @@ const listener = async () => {
 	}
 
 	auth = await requestAccessToken()
-	let lyricData;
+	let lyricData: Lyric;
 	let lyricCoolDown = extensionContext.globalState.get<number>('cooldown') || 0;
 	let lyricState = extensionContext.globalState.get<Lyric>('lyric');
 	const playing = await spotify.getNowPlaying(auth.accessToken!);
-	const playingState = extensionContext.globalState.get<Playing>('playing');
 	const timestamp = Date.now();
 
 	if (playing.exception) {
@@ -115,13 +113,15 @@ const listener = async () => {
 
 	const retrieveLyrics = (lyricState?.id !== playing.id)
 
-	if (retrieveLyrics && timestamp >= lyricCoolDown) {
+	if (retrieveLyrics && timestamp >= lyricCoolDown && !alreadyFetchingLyrics) {
+		alreadyFetchingLyrics = true;
 		extensionContext.globalState.update('cooldown', Date.now() + 5000);
-		lyricData = await lyric.romanize(await lyric.getLyric(playing));
+		lyricData = await lyric.getLyric(playing);
 		
 		extensionContext.globalState.update('lyric', lyricData);
 		lyricState = lyricData;
 		
+		alreadyFetchingLyrics = false;
 		if (lyricData.exception) {
 			return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricData.exception.message });
 		}
@@ -131,7 +131,6 @@ const listener = async () => {
 		return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricState?.exception.message });
 	}
 
-	extensionContext.globalState.update('playing', playing);
 	// if (first || (retrieveLyrics && timestamp >= lyricCoolDown)) {
 	// 	first = false;
 	// 	// console.log(playing)
@@ -140,7 +139,7 @@ const listener = async () => {
 	provider.view?.webview.postMessage({
 		'command': 'updatePlayer',
 		'content': {
-			'lyrics': lyricData?.lyric || lyricState?.lyric,
+			'lyrics': lyricState?.syncedLyric,
 			'milliseconds': playing.currentProgress
 		}
 	})

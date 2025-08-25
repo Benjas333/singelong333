@@ -14,7 +14,9 @@
             --wave-amplitude: 10px;
             --wave-delay-step: 0.08s;
             /* --wave-ease: cubic-bezier(.2,.9,.3,.95); */
-            --wave-ease: ease-in-out
+            --wave-ease: ease-in-out;
+
+            --general-padding: 0 1rem 0 1rem;
         }
 
         html,
@@ -43,17 +45,17 @@
         }
 
         #error {
-            padding: 0 2rem 0 2rem;
+            padding: var(--general-padding);
         }
 
         #lyrics-content {
             overflow-y: scroll;
             scroll-behavior: smooth;
-            height: 80vh;
+            height: 90vh;
             text-align: left;
             -ms-overflow-style: none;
             scrollbar-width: none;
-            padding: 0 2rem 0 2rem;
+            padding: var(--general-padding);
             max-width: 90vw;
         }
 

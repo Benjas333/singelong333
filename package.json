@@ -14,7 +14,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/benjas333/singelong"
+    "url": "https://github.com/benjas333/singelong333"
   },
   "icon": "assets/images/icon.png",
   "__metadata": {
@@ -25,34 +25,47 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "singelong-activitybar",
+          "id": "singelong333-activitybar",
           "title": "SingeLong333",
           "icon": "assets/images/icon-logo.svg"
         }
       ]
     },
     "views": {
-      "singelong-activitybar": [
+      "singelong333-activitybar": [
         {
           "icon": "assets/images/icon-logo.svg",
           "type": "webview",
-          "id": "singelong.openview",
+          "id": "singelong333.openview",
           "name": "SingeLong333"
         }
       ]
     },
     "commands": [
       {
-        "command": "singelong.authorize",
+        "command": "singelong333.authorize",
         "title": "Authorize",
         "category": "SingeLong333"
       },
       {
-        "command": "singelong.logout",
+        "command": "singelong333.logout",
         "title": "Logout",
         "category": "SingeLong333"
+      },
+      {
+        "command": "singelong333.reload-panel",
+        "title": "Reload Panel (Debugging)",
+        "category": "SingeLong333"
       }
-    ]
+    ],
+    "menus": {
+      "webview/context": [
+        {
+          "command": "singelong333.reload-panel",
+          "when": "webviewId == 'singelong333.openview'"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
