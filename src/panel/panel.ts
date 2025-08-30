@@ -19,14 +19,32 @@ export class SingeLongViewProvider implements vscode.WebviewViewProvider {
         this.reloadContent();
     }
 
+    private getPanelUri(file: string) {
+        return vscode.Uri.joinPath(this._extensionUri, 'assets', 'panel', file);
+    }
+
     get indexContentUri() {
-        return vscode.Uri.joinPath(this._extensionUri, 'assets', 'index.html');
+        return this.getPanelUri('index.html');
+    }
+
+    get stylesheet() {
+        return this.getPanelUri('index.css');
+    }
+
+    get particles() {
+        return this.getPanelUri('particles.js');
     }
 
     public reloadContent() {
         if (!this.view) return;
         const contentUri = this.view.webview.asWebviewUri(this.indexContentUri);
-        this.view.webview.html = this.getHtmlContent(contentUri)
+        let content = this.getHtmlContent(contentUri);
+
+        const stylesheetUri = this.view.webview.asWebviewUri(this.stylesheet);
+        const particlesUri = this.view.webview.asWebviewUri(this.particles);
+        content = content.replace('{{STYLE_URI}}', `${stylesheetUri}`).replace('{{PARTICLES_URI}}', `${particlesUri}`);
+
+        this.view.webview.html = content
     }
 
     private getHtmlContent(contentUri: vscode.Uri): string {

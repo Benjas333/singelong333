@@ -54,7 +54,7 @@
       },
       {
         "command": "singelong333.reload-panel",
-        "title": "Reload Panel (Debugging)",
+        "title": "Reload Panel",
         "category": "SingeLong333"
       }
     ],

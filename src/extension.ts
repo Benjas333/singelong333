@@ -10,7 +10,6 @@ import { Lyric } from './types/lyric';
 let extensionContext: vscode.ExtensionContext;
 let provider: SingeLongViewProvider;
 let extensionUri: vscode.Uri;
-// let first = true;
 let alreadyFetchingLyrics = false;
 
 export function activate(context: vscode.ExtensionContext) {
@@ -31,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const panelProvider = vscode.window.registerWebviewViewProvider(SingeLongViewProvider.viewType, provider)
 	context.subscriptions.push(panelProvider);
 
-	const reload = vscode.commands.registerCommand('singelong333.reload-panel', () => provider.reloadContent())
+	const reload = vscode.commands.registerCommand('singelong333.reload-panel', () => reloadPanel())
 	context.subscriptions.push(reload);
 
 	// listen updates
@@ -62,6 +61,11 @@ const authorize = async () => {
 }
 
 const signOut = async () => extensionContext.globalState.update("auth", null);
+
+const reloadPanel = () => {
+	provider.reloadContent();
+	setTimeout(() => extensionContext.globalState.update('lyric', null), 2500)
+}
 
 const requestAccessToken = async (): Promise<Auth> => {
 	const timestamp = Date.now();
@@ -96,13 +100,13 @@ const listener = async () => {
 	const isTokenExist = (auth?.accessToken != null);
 
 	if (!isTokenExist) {
-		provider.view?.webview.postMessage({ 'command': 'error', 'message': 'spotify account is\'nt authorized yet' });
+		provider.view?.webview.postMessage({ 'command': 'error', 'message': 'Spotify account isn\'t authorized yet' });
 		return;
 	}
 
 	auth = await requestAccessToken()
 	let lyricData: Lyric;
-	let lyricCoolDown = extensionContext.globalState.get<number>('cooldown') || 0;
+	const lyricCoolDown = extensionContext.globalState.get<number>('cooldown') || 0;
 	let lyricState = extensionContext.globalState.get<Lyric>('lyric');
 	const playing = await spotify.getNowPlaying(auth.accessToken!);
 	const timestamp = Date.now();
@@ -111,38 +115,46 @@ const listener = async () => {
 		return provider.view?.webview.postMessage({ 'command': 'error', 'message': playing.exception.message });
 	}
 
-	const retrieveLyrics = (lyricState?.id !== playing.id)
+	provider.view?.webview.postMessage({
+		'command': 'updateProgress',
+		'content': playing.currentProgress
+	})
 
-	if (retrieveLyrics && timestamp >= lyricCoolDown && !alreadyFetchingLyrics) {
+	const retrieveLyrics = (
+		lyricState?.id !== playing.id
+		|| (
+			lyricState?.exception
+			&& timestamp >= lyricCoolDown
+		)
+	)
+
+	if (!alreadyFetchingLyrics && (!lyricState || retrieveLyrics)) {
 		alreadyFetchingLyrics = true;
-		extensionContext.globalState.update('cooldown', Date.now() + 5000);
+		console.log(`Retrieving lyrics for: ${playing.songTitle} (${playing.artistName})`)
+		extensionContext.globalState.update('cooldown', Date.now() + 30000);
 		lyricData = await lyric.getLyric(playing);
 		
 		extensionContext.globalState.update('lyric', lyricData);
 		lyricState = lyricData;
 		
+		provider.view?.webview.postMessage({
+			'command': 'updateLyrics',
+			'content': lyricState
+		})
 		alreadyFetchingLyrics = false;
-		if (lyricData.exception) {
-			return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricData.exception.message });
-		}
 	}
-
+	
 	if (lyricState?.exception) {
-		return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricState?.exception.message });
+		return provider.view?.webview.postMessage({ 'command': 'error', 'message': lyricState.exception.message });
 	}
-
-	// if (first || (retrieveLyrics && timestamp >= lyricCoolDown)) {
-	// 	first = false;
-	// 	// console.log(playing)
-	// 	// console.log(lyricData || lyricState)
-	// }
-	provider.view?.webview.postMessage({
-		'command': 'updatePlayer',
-		'content': {
-			'lyrics': lyricState?.syncedLyric,
-			'milliseconds': playing.currentProgress
-		}
-	})
+	
+	// provider.view?.webview.postMessage({
+	// 	'command': 'updatePlayer',
+	// 	'content': {
+	// 		'lyrics': lyricState?.syncedLyric,
+	// 		'milliseconds': playing.currentProgress
+	// 	}
+	// })
 }
 
 export function deactivate() { }

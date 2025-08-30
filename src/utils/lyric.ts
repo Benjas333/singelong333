@@ -15,7 +15,7 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         // Fetch Netease
         const chinese = await fetchNetease(playing);
         logProviderResponse(chinese);
-        if (!chinese.exception) {
+        if (chinese.syncedLyric) {
             console.log("LYRICS FROM NETEASE");
             return chinese;
         }
@@ -24,7 +24,7 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         // Fetch MusixMatch
         const musixmatch = await fetchMusixMatch(playing);
         logProviderResponse(musixmatch);
-        if (!musixmatch.exception) {
+        if (musixmatch.syncedLyric) {
             console.log("LYRICS FROM MUSIXMATCH");
             return musixmatch;
         }
@@ -33,15 +33,19 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         // Fetch LRCLIB
         const lrclib = await fetchLRCLIB(playing);
         logProviderResponse(lrclib);
-        if (!lrclib.exception) {
+        if (lrclib.syncedLyric) {
             console.log("LYRICS FROM LRCLIB");
             return lrclib;
         }
 
         // TODO: Fetch Genius
 
+        if (chinese.plainLyric) return chinese;
+        else if (musixmatch.plainLyric) return musixmatch;
+        else if (lrclib.plainLyric) return lrclib;
 
-        throw `Lyrics not found in any provider for: ${playing.songTitle}(${playing.artistName})`;
+
+        throw `Lyrics not found in any provider for: ${playing.songTitle} (${playing.artistName})`;
     } catch (e: any) {
         return { id: playing.id, exception: { code: 404, message: `${e?.stack ?? e}` } };
     }

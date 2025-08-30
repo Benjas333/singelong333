@@ -6,6 +6,45 @@ All notable changes to the "singelong333" extension will be documented in this f
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-08-30
+
+### Added
+
+- Panel displays lyrics provider
+- Reload panel command and button in context menu (promoted from debug only to casual use) (beta)
+- Local romanization for MusixMatch lyrics
+- Instrumental song detector (only for MusixMatch lyrics for now)
+- Retrieving lyrics retry (30s) if the last one failed
+- Some MusixMatch exception
+
+### Changed
+
+- Reduced the panel margin
+- Panel now renders plain lyrics in case synced lyrics are not provided (improved logic)
+- Split lyrics and progress logic into two isolated payloads
+- Split the index.html panel into index.css and particles.js (probably index.js too in the future)
+- Refactored the panel files into their own folder
+- Reload panel command now refetchs lyrics too
+- Improved LRCLIB lyrics logic
+- Improved MusixMatch lyrics logic
+- Slightly improved romanization logic
+- Updated README.md
+
+### Removed
+
+- particles.json was not being used (I think)
+
+### Fixed
+
+- Chorus lyrics sometimes not playing animation
+- Auto scrolling lyrics misaligned (I tried my best, but it's still not centered for some reason TuT)
+- If a provider didn't retrieve synced lyrics but successfully retrieved plain lyrics, those were accidentally used without checking synced lyrics from other providers
+- Extra blank spaces in Japanese romanized lyrics
+- Some typos
+- Error and traceback displaying in panel
+- MusixMatch plain lyrics logic
+- MusixMatch types
+
 ## [1.2.0] - 2025-08-25
 
 ### Added
@@ -22,14 +61,14 @@ All notable changes to the "singelong333" extension will be documented in this f
 - Repo rebrand to /singelong333
 - Merged Singelong new changes
 - Updated README.md
-- Refactored lyrics providers into its own files
+- Refactored lyrics providers into their own files
 - Improved romanizing logic
 - CSS style minor changes
 
 ### Fixed
 
 - Every possible ID now has singelong333 in order to not have conflicts with the og extension (in case you want to install both at the same time for some reason)
-- Sometimes lyrics where fetched multiple times at the same time (usually when starting extension and when desync)
+- Sometimes lyrics were fetched multiple times at the same time (usually when starting extension and when desync)
 
 ## [1.1.4] - 2025-08-18
 
@@ -86,4 +125,4 @@ All notable changes to the "singelong333" extension will be documented in this f
 
 ## [1.0.0] - 2024-09-14
 
-- Initial release
+- (Original SingeLong) Initial release

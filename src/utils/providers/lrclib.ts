@@ -4,7 +4,6 @@ import { Playing } from "../../types/playing";
 import { Provider } from "../../types/providers/common";
 import { LrclibSearchSong } from "../../types/providers/lrclib";
 import { romanize } from "../romanize";
-import { logToPasteBin } from "../pastebin";
 
 
 export const fetchLRCLIB = async (playing: Playing): Promise<Lyric> => {
@@ -16,7 +15,7 @@ export const fetchLRCLIB = async (playing: Playing): Promise<Lyric> => {
                 " ",
                 "+"
         )}&track_name=${playing.songTitle?.replaceAll(" ", "+")}`;
-        console.log(`Requesting lyrics to: ${url}`);
+        // console.log(`Requesting lyrics to: ${url}`);
         let result: axios.AxiosResponse<LrclibSearchSong[]>;
         try {
                 result = await axios.get<LrclibSearchSong[]>(url);
@@ -29,8 +28,7 @@ export const fetchLRCLIB = async (playing: Playing): Promise<Lyric> => {
                 return response;
         }
         const songs = result.data;
-        console.log(songs);
-        // logToPasteBin(`${playing.songTitle}-LRCLIB`, songs);
+        // console.log(songs);
         if (!Array.isArray(songs) || !songs.length) {
                 response.exception = {
                         code: 404,
@@ -39,17 +37,15 @@ export const fetchLRCLIB = async (playing: Playing): Promise<Lyric> => {
                 return response;
         }
 
-        for (const song of songs) {
-                if (!song.syncedLyrics) continue;
-                response.syncedLyric = song.syncedLyrics;
-                response.plainLyric = song.plainLyrics;
-                break;
+        const closest = songs.find(song => song.syncedLyrics)
+        if (closest) {
+                response.syncedLyric = closest.syncedLyrics
+                response.plainLyric = closest.plainLyrics
         }
         if (!response.plainLyric) {
-                for (const song of songs) {
-                        if (!song.plainLyrics) continue;
-                        response.plainLyric = song.plainLyrics;
-                        break;
+                const plain = songs.find(song => song.plainLyrics)
+                if (plain) {
+                        response.plainLyric = plain.plainLyrics
                 }
         }
         if (!response.syncedLyric && !response.plainLyric) {

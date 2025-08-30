@@ -5,14 +5,21 @@
 </div>
 
 ---
-
+***This is a reimagination of the original [SingeLong](https://github.com/qolbudr/singelong) extension. To know the differences, please refer to the [changelog](./CHANGELOG.md) or [features](#features)***
 <p align="center">
   <img src="./assets/demo.gif" width="100%" />
 </p>
 
 ## Features
+- Lyrics romanization for Japanese
+- LRCLIB lyrics provider
+- Lyrics animation
+- Plain lyrics in case synced lyrics are not available
+
+## Features (Legacy SingeLong)
 - Autosync lyric for (almost) any song
 - Spotify account synchronize
+- MusixMatch lyrics provider
 - Dynamic background **(coming soon)**
 
 ## Installation
@@ -22,6 +29,10 @@
     height="80">](https://github.com/Benjas333/singelong333/releases/latest)
 
 ## Acknowledgments
+### Platforms
+- [**Spotify**](https://www.spotify.com/): Stream music and podcasts, listen to audiobooks, discover albums, playlists or even single songs for free on your mobile or tablet. 
+
+### Lyrics providers
 - [**MusixMatch**](https://www.musixmatch.com): The World's Largest Lyrics Catalog.
 - [**LRCLIB**](https://lrclib.net/): Open-source database for finding and contributing song lyrics.
 - [**Xinqiao Wang**](https://music.xianqiao.wang): Xinqiao Wang Music Player.
@@ -29,9 +40,13 @@
 
 
 ## TODO (in priority order)
-- Refresh/refetch lyrics button in context menu.
+- Refresh/refetch lyrics button in context menu (already in beta).
+- Redo from zero the entire lyrics panel html, because its og code is horrendous (50%).
+- Retrieving official romanization lyrics from MusixMatch.
+- Local romanization for other languages.
 - Add Genius lyrics provider.
-- Redo from zero the entire lyrics panel html, because its code is horrendous.
+- More precise lyrics animation (timing).
+### v2.0
 - Add Windows Media Control support.
 - Add dynamic background because the original repo promised it.
 

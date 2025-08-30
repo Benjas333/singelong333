@@ -13,7 +13,7 @@
             <h2 class="text-light" style="margin: 0px">Hmmmm</h2>
             <h4 class="text-dark" id="message" style="opacity: 0.5"></h4>
         </div>
-        <div id="lyrics">
+        <div id="lyrics" style="display: none;">
             <h4 id="lyrics-provider" style="opacity: 0.5"></h4>
             <div id="lyrics-content">
             </div>
@@ -61,7 +61,7 @@
 
             const provider = document.getElementById('lyrics-provider')
             if (provider)
-                provider.innerHTML = `Lyrics provider: ${lyrics.provider}` + (lyrics.syncedLyric ? '' : ' (Not synced)');
+                provider.innerHTML = `Lyrics provider: ${lyrics.provider}` + (lyrics.syncedLyric ? '' : '(Not synced)');
 
             const screen = document.getElementById("lyrics-content")
             screen.innerHTML = ''
@@ -182,6 +182,7 @@
             })
             const subtitle = document.getElementById(`${node.id}-subtitle`)
             if (subtitle) {
+                // subtitle.classList.add('actual-lyric')
                 offset = 0
                 const sub_text = subtitle.textContent ?? '';
                 subtitle.innerHTML = '';

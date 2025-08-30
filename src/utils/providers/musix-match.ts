@@ -4,6 +4,7 @@ import { Playing } from "../../types/playing";
 import { Provider } from "../../types/providers/common";
 import { logToPasteBin } from "../pastebin";
 import { MusixMatchMacroResponse } from "../../types/providers/musix-match";
+import { romanize } from "../romanize";
 
 const msxmatchToken = "2005218b74f939209bda92cb633c7380612e14cb7fe92dcd6a780f";
 const msxmatchUrl =
@@ -43,8 +44,19 @@ export const fetchMusixMatch = async (playing: Playing): Promise<Lyric> => {
                 return response;
         }
 
+        const header = data.message.header
+        if (header.status_code !== 200) {
+                response.exception = {
+                        code: header.status_code,
+                        message: header.hint || 'Unknown error'
+                };
+                return response;
+        }
+
+        const body = data.message.body
+        let instrumental: number | null = null;
         const syncedBody =
-                data.message.body.macro_calls["track.subtitles.get"].message
+                body.macro_calls["track.subtitles.get"].message
                         .body;
         if (syncedBody && !Array.isArray(syncedBody)) {
                 const subtitleList = syncedBody.subtitle_list;
@@ -53,9 +65,15 @@ export const fetchMusixMatch = async (playing: Playing): Promise<Lyric> => {
                 }
         }
 
-        const plainBody = data.message.body.macro_calls['track.lyrics.get'].message.body;
-        if (plainBody) {
-                response.plainLyric = plainBody.lyrics.lyrics_body;
+        const plainBody = body.macro_calls['track.lyrics.get'].message.body;
+        if (plainBody && !Array.isArray(plainBody)) {
+                const lyr = plainBody.lyrics;
+                response.plainLyric = lyr.lyrics_body;
+                instrumental ??= lyr.instrumental || 0;
+        }
+
+        if (instrumental && !response.plainLyric) {
+                response.plainLyric = 'Instrumental';
         }
         if (!response.plainLyric && !response.syncedLyric) {
                 response.exception = {
@@ -66,7 +84,6 @@ export const fetchMusixMatch = async (playing: Playing): Promise<Lyric> => {
         }
 
         // TODO: Add translations retriever
-        // TODO: Add local romanizing in case translation retriever fails
-
-        return response;
+        
+        return await romanize(response);
 };

@@ -29,7 +29,7 @@ export const romanize = async (lyric: Lyric): Promise<Lyric> => {
                 const convertedPlainLyrics = await convertJapaneseText(lyric.plainLyric, kuro);
                 lyric.plainLyric = convertedPlainLyrics
         }
-        if (lyric.syncedLyric) {
+        if (lyric.syncedLyric && Kuroshiro.Util.hasJapanese(lyric.syncedLyric)) {
                 const lines = lyric.syncedLyric.split("\n");
                 const convertedSyncedLines = await Promise.all(
                         lines.map(async (line) => {

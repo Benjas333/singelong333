@@ -42,7 +42,7 @@ interface TrackLyricsGet {
                 header: header
                 body?: {
                         lyrics: TrackLyricsGetBody
-                }
+                } | []
         }
 }
 
