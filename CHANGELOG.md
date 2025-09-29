@@ -6,6 +6,29 @@ All notable changes to the "singelong333" extension will be documented in this f
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-09-29
+
+### Added
+
+- Romanization for Chinese, Korean, and Thai.
+- First lyric (at 0:00) as emptyLyric.
+- Instrumental song indicator and lyrics handling.
+
+### Changed
+
+- Improved romanization in general.
+- Improved Japanese romanization.
+- The project now uses esbuild for bundling.
+- Promoted reload panel command and button from beta.
+- Minor css style changes.
+- syncedLyric and plainLyric are now of type array.
+- Improved retrieving lyrics logging (?) (Actually not, but minor changes).
+
+### Fixed
+
+- Finally fixed auto scroll alignment.
+- Removed kuromoji from external modules in esbuild.js.
+
 ## [1.2.1] - 2025-08-30
 
 ### Added

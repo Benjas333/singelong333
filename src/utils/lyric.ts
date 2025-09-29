@@ -16,7 +16,7 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         const chinese = await fetchNetease(playing);
         logProviderResponse(chinese);
         if (chinese.syncedLyric) {
-            console.log("LYRICS FROM NETEASE");
+            console.log(`SYNCED LYRICS FROM ${chinese.provider?.toUpperCase()}`);
             return chinese;
         }
 
@@ -25,7 +25,7 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         const musixmatch = await fetchMusixMatch(playing);
         logProviderResponse(musixmatch);
         if (musixmatch.syncedLyric) {
-            console.log("LYRICS FROM MUSIXMATCH");
+            console.log(`SYNCED LYRICS FROM ${musixmatch.provider?.toUpperCase()}`);
             return musixmatch;
         }
 
@@ -34,15 +34,24 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         const lrclib = await fetchLRCLIB(playing);
         logProviderResponse(lrclib);
         if (lrclib.syncedLyric) {
-            console.log("LYRICS FROM LRCLIB");
+            console.log(`SYNCED LYRICS FROM ${lrclib.provider?.toUpperCase()}`);
             return lrclib;
         }
 
         // TODO: Fetch Genius
 
-        if (chinese.plainLyric) return chinese;
-        else if (musixmatch.plainLyric) return musixmatch;
-        else if (lrclib.plainLyric) return lrclib;
+        if (chinese.plainLyric) {
+            console.log(`PLAIN LYRICS FROM ${chinese.provider?.toUpperCase()}`);
+            return chinese;
+        }
+        else if (musixmatch.plainLyric) {
+            console.log(`PLAIN LYRICS FROM ${musixmatch.provider?.toUpperCase()}`);
+            return musixmatch;
+        }
+        else if (lrclib.plainLyric) {
+            console.log(`PLAIN LYRICS FROM ${lrclib.provider?.toUpperCase()}`);
+            return lrclib;
+        }
 
 
         throw `Lyrics not found in any provider for: ${playing.songTitle} (${playing.artistName})`;

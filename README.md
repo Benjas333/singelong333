@@ -11,10 +11,11 @@
 </p>
 
 ## Features
-- Lyrics romanization for Japanese
+- Lyrics romanization for Japanese, Chinese, Korean, and Thai
 - LRCLIB lyrics provider
 - Lyrics animation
 - Plain lyrics in case synced lyrics are not available
+- Refresh/refetch lyrics button
 
 ## Features (Legacy SingeLong)
 - Autosync lyric for (almost) any song
@@ -30,22 +31,23 @@
 
 ## Acknowledgments
 ### Platforms
-- [**Spotify**](https://www.spotify.com/): Stream music and podcasts, listen to audiobooks, discover albums, playlists or even single songs for free on your mobile or tablet. 
+- [**Spotify**](https://www.spotify.com/): A digital music, podcast, and video service that gives you access to millions of songs and other content from creators all over the world.
 
 ### Lyrics providers
-- [**MusixMatch**](https://www.musixmatch.com): The World's Largest Lyrics Catalog.
-- [**LRCLIB**](https://lrclib.net/): Open-source database for finding and contributing song lyrics.
-- [**Xinqiao Wang**](https://music.xianqiao.wang): Xinqiao Wang Music Player.
+- [**MusixMatch**](https://www.musixmatch.com/): The World's Largest Lyrics Catalog.
+- [**YT Music**](https://music.youtube.com/): Watch and listen to a nearly endless catalog in an app designed for music discovery. **(coming soon)**
+- [**LRCLIB**](https://lrclib.net/): Open-source, community-driven service for retrieving and contributing music lyrics.
+- [**Xinqiao Wang**](https://music.xianqiao.wang/): Xinqiao Wang Music Player.
 - [**Genius**](https://genius.com/): The world’s biggest collection of song lyrics and musical knowledge. *(Does not provide synced lyrics)* **(coming soon)**
 
 
 ## TODO (in priority order)
-- Refresh/refetch lyrics button in context menu (already in beta).
 - Redo from zero the entire lyrics panel html, because its og code is horrendous (50%).
+  - Redo the subtitles system (can't handle more than one subtitle).
 - Retrieving official romanization lyrics from MusixMatch.
-- Local romanization for other languages.
+- Add YTMusic lyrics provider (waiting for [PR merge](https://github.com/zS1L3NT/ts-npm-ytmusic-api/pull/55)).
 - Add Genius lyrics provider.
-- More precise lyrics animation (timing).
+- More precise lyrics wave animation (timing).
 ### v2.0
 - Add Windows Media Control support.
 - Add dynamic background because the original repo promised it.

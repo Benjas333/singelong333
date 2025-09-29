@@ -1,63 +1,218 @@
 import Kuroshiro from "kuroshiro";
 import KuromojiAnalyzer from "kuroshiro-analyzer-kuromoji";
+import { romanize as esHangulRomanize } from "es-hangul";
+import hanja from "hanja";
+import { convertToPinyin } from "tiny-pinyin";
+const romanizeThaiFragPromise = import("@dehoist/romanize-thai").then(
+        (mod) => mod.romanize
+);
+import { lazy } from "lazy-var";
+import { detect } from "tinyld";
 import * as vscode from "vscode";
 import { Lyric } from "../types/lyric";
 
-let kuroshiro: Kuroshiro | null = null;
+const kuroshiro = lazy(async () => {
+        const _kuroshiro = new Kuroshiro();
+        await _kuroshiro.init(
+                // new KuromojiAnalyzer({ dictPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/" })
+                new KuromojiAnalyzer()
+        );
+        return _kuroshiro;
+});
 
-const getKuroshiro = async (): Promise<Kuroshiro> => {
-        if (kuroshiro !== null) return kuroshiro;
+let _notified = false;
+const notify = (lang: string) => {
+        if (_notified) return;
 
-        kuroshiro = new Kuroshiro();
-        await kuroshiro.init(new KuromojiAnalyzer());
-        return kuroshiro;
+        _notified = true;
+        vscode.window.showInformationMessage(
+                `Romanizing lyrics locally (${lang})...`
+        );
 };
 
-let notified = false;
-const notify = () => {
-        if (notified) return;
-        
-        vscode.window.showInformationMessage("Romanizing lyrics locally...");
-        notified = true
-}
+const hasJapanese = (line: string) => {
+        return Kuroshiro.Util.hasKana(line) || shinjitaiRegex.test(line);
+};
 
-export const romanize = async (lyric: Lyric): Promise<Lyric> => {
+const hasKorean = (line: string) => {
+        return /[ㄱ-ㅎㅏ-ㅣ가-힣]+/.test(line);
+};
+
+const hasChinese = (line: string) => {
+        return /[\u4E00-\u9FFF]+/.test(line);
+};
+
+const hasThai = (line: string) => {
+        return /[\u0E00-\u0E7F]+/.test(line);
+};
+
+export const romanizeLyrics = async (lyric: Lyric): Promise<Lyric> => {
         if (lyric.exception) return lyric;
-        
-        const kuro = await getKuroshiro();
-        if (lyric.plainLyric) {
-                const convertedPlainLyrics = await convertJapaneseText(lyric.plainLyric, kuro);
-                lyric.plainLyric = convertedPlainLyrics
-        }
-        if (lyric.syncedLyric && Kuroshiro.Util.hasJapanese(lyric.syncedLyric)) {
-                const lines = lyric.syncedLyric.split("\n");
+
+        if (lyric.syncedLyric) {
+                const lines = lyric.syncedLyric;
                 const convertedSyncedLines = await Promise.all(
                         lines.map(async (line) => {
-                                const match = line.trim().match(/\[\d+:\d+.\d+\] (.*)/);
-                                if (match === null || match.length < 2) return line;
-                                const converted = await convertJapaneseText(match[1], kuro);
+                                const match = line
+                                        .trim()
+                                        .match(/\[\d+:\d+.\d+\] (.*)/);
+                                if (match === null || match.length < 2)
+                                        return line;
+
+                                const converted = await romanizeText(
+                                        match[1],
+                                        lyric.lang
+                                );
                                 if (converted === match[1]) return line;
                                 return line.replace(match[1], converted);
                         })
                 );
-                lyric.syncedLyric = convertedSyncedLines.join("\n");
+                lyric.syncedLyric = convertedSyncedLines;
         }
-        notified = false;
+        if (lyric.plainLyric) {
+                const lines = lyric.plainLyric;
+                const convertedPlainLines = await Promise.all(
+                        lines.map(
+                                async (line) =>
+                                        await romanizeText(
+                                                line.trim(),
+                                                lyric.lang
+                                        )
+                        )
+                );
+                lyric.plainLyric = convertedPlainLines;
+        }
+        _notified = false;
         return lyric;
 };
+const romanizeText = async (line: string, lang?: string) => {
+        if (!line.trim().length) return line;
 
-const convertJapaneseText = async (text: string, converter: Kuroshiro): Promise<string> => {
-        if (!Kuroshiro.Util.hasJapanese(text)) return text
-        notify()
+        const used_lang = lang ?? detect(line);
+
+        switch (used_lang) {
+                case "ja":
+                        line = await romanizeJapanese(line);
+                        break;
+                case "ko":
+                        line = romanizeKorean(line);
+                        break;
+                case "zh":
+                        line = romanizeChinese(line);
+                        break;
+                case "th":
+                        line = await romanizeThai(line);
+                        break;
+                default:
+                        break;
+        }
+
+        if (hasJapanese(line)) {
+                line = await romanizeJapanese(line);
+        }
+        if (hasKorean(line)) {
+                line = romanizeKorean(line);
+        }
+        if (hasChinese(line)) {
+                line = romanizeChinese(line);
+        }
+        if (hasThai(line)) {
+                line = await romanizeThai(line);
+        }
+
+        return line;
+};
+
+const romanizeJapanese = async (text: string): Promise<string> => {
+        notify("Japanese");
 
         try {
-                return await converter.convert(text, {
-                        to: 'romaji',
-                        mode: 'spaced',
-                        romajiSystem: 'passport'
-                });
+                return (
+                        (await (
+                                await kuroshiro.get()
+                        ).convert(text, {
+                                to: "romaji",
+                                mode: "spaced",
+                                // romajiSystem: 'passport'
+                        })) ?? text
+                );
         } catch (error) {
                 vscode.window.showWarningMessage(`${error}`);
                 return text;
         }
-}
+};
+
+const romanizeKorean = (text: string) => {
+        notify("Korean");
+
+        // NOTE: Maybe add try-catch
+        return esHangulRomanize(hanja.translate(text, "SUBSTITUTION"));
+};
+
+const romanizeChinese = (text: string) => {
+        notify("Chinese");
+
+        return text.replaceAll(/[\u4E00-\u9FFF]+/g, (match) =>
+                convertToPinyin(match, " ", true)
+        );
+};
+
+const thaiSegmenter = Intl.Segmenter.supportedLocalesOf("th").includes("th")
+        ? new Intl.Segmenter("th", { granularity: "word" })
+        : null;
+
+const romanizeThai = async (line: string) => {
+        notify("Thai");
+
+        const romanizeThaiFrag = await romanizeThaiFragPromise;
+
+        if (!thaiSegmenter) return romanizeThaiFrag(line);
+
+        const segments = Array.from(thaiSegmenter.segment(line));
+        const latin = segments.map((segment) =>
+                segment.isWordLike
+                        ? romanizeThaiFrag(segment.segment)
+                        : segment.segment.trim()
+        );
+        return latin.join(" ").trim();
+};
+
+const shinjitai = [
+        20055, 20081, 20120, 20124, 20175, 26469, 20341, 20206, 20253, 20605,
+        20385, 20537, 20816, 20001, 20869, 23500, 28092, 20956, 21104, 21091,
+        21092, 21172, 21234, 21169, 21223, 21306, 24059, 21363, 21442, 21782,
+        21336, 22107, 21427, 22065, 22287, 22269, 22258, 20870, 22259, 22243,
+        37326, 23597, 22679, 22549, 22311, 22593, 22730, 22732, 22766, 22769,
+        23551, 22885, 22888, 23330, 23398, 23517, 23455, 20889, 23515, 23453,
+        23558, 23554, 23550, 23626, 23631, 23646, 23792, 23777, 23798, 23731,
+        24012, 24035, 24111, 24182, 24259, 24195, 24193, 24382, 24357, 24367,
+        24452, 24467, 24500, 24499, 24658, 24693, 24746, 24745, 24910, 24808,
+        24540, 25040, 24651, 25126, 25135, 25144, 25147, 25173, 25244, 25309,
+        25375, 25407, 25522, 25531, 25594, 25436, 25246, 25731, 25285, 25312,
+        25369, 25313, 25666, 25785, 21454, 21177, 21465, 21189, 25968, 26029,
+        26179, 26217, 26172, 26278, 26241, 26365, 20250, 26465, 26719, 26628,
+        27097, 27010, 27005, 27004, 26530, 27096, 27178, 26727, 26908, 26716,
+        27177, 27431, 27475, 27497, 27508, 24112, 27531, 27579, 27572, 27598,
+        27671, 28169, 28057, 27972, 27973, 28167, 28179, 28201, 28382, 28288,
+        28300, 28508, 28171, 27810, 28287, 28168, 27996, 27818, 28381, 28716,
+        28286, 28948, 28783, 28988, 21942, 28809, 20105, 28858, 29344, 29366,
+        29421, 22888, 29420, 29471, 29539, 29486, 24321, 29942, 30011, 24403,
+        30067, 30185, 30196, 30330, 26479, 30423, 23613, 30495, 30740, 30741,
+        30783, 31192, 31108, 31109, 31036, 31074, 31095, 31216, 31282, 38964,
+        31298, 31311, 31331, 31363, 20006, 31883, 31992, 32076, 32209, 32210,
+        32257, 30476, 32294, 32207, 32333, 32260, 32117, 32331, 32153, 32154,
+        32330, 27424, 32566, 22768, 32884, 31899, 33075, 32966, 33235, 21488,
+        19982, 26087, 33398, 33624, 33550, 33804, 19975, 33931, 22290, 34219,
+        34101, 33464, 34220, 33446, 20966, 34394, 21495, 34509, 34411, 34635,
+        34453, 34542, 34907, 35013, 35090, 35226, 35239, 35251, 35302, 35617,
+        35388, 35379, 35465, 35501, 22793, 35698, 35715, 35914, 33398, 20104,
+        24336, 22770, 38972, 36059, 36341, 36527, 36605, 36620, 36578, 24321,
+        36766, 24321, 36965, 36883, 36933, 36794, 37070, 37111, 37204, 21307,
+        37284, 37271, 37304, 37320, 37682, 37549, 37676, 37806, 37444, 37619,
+        37489, 38306, 38501, 38543, 38522, 38560, 21452, 38609, 35207, 38666,
+        38745, 39003, 38997, 32763, 20313, 39173, 39366, 39442, 39366, 39443,
+        39365, 39620, 20307, 39658, 38360, 40335, 40206, 40568, 22633, 40614,
+        40633, 40634, 40644, 40658, 40665, 28857, 20826, 25993, 25998, 27503,
+        40802, 31452, 20096,
+].map((codePoint) => String.fromCodePoint(codePoint));
+const shinjitaiRegex = new RegExp(`[${shinjitai.join("")}]`);

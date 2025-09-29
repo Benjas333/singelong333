@@ -13,10 +13,9 @@ async function main() {
                 sourcesContent: false,
                 platform: 'node',
                 outfile: 'dist/extension.js',
-                external: ['vscode', 'kuromoji'],
+                external: ['vscode'],
                 logLevel: 'warning',
                 plugins: [
-                        /* add to the end of plugins array */
                         esbuildProblemMatcherPlugin
                 ]
         });

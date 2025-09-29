@@ -4,7 +4,7 @@ import { Playing } from "../../types/playing";
 import { Provider } from "../../types/providers/common";
 import { logToPasteBin } from "../pastebin";
 import { MusixMatchMacroResponse } from "../../types/providers/musix-match";
-import { romanize } from "../romanize";
+import { romanizeLyrics } from "../romanize";
 
 const msxmatchToken = "2005218b74f939209bda92cb633c7380612e14cb7fe92dcd6a780f";
 const msxmatchUrl =
@@ -53,28 +53,24 @@ export const fetchMusixMatch = async (playing: Playing): Promise<Lyric> => {
                 return response;
         }
 
-        const body = data.message.body
-        let instrumental: number | null = null;
-        const syncedBody =
-                body.macro_calls["track.subtitles.get"].message
-                        .body;
+        const body = data.message.body;
+        const syncedBody = body.macro_calls["track.subtitles.get"].message.body;
         if (syncedBody && !Array.isArray(syncedBody)) {
                 const subtitleList = syncedBody.subtitle_list;
                 if (subtitleList.length) {
-                        response.syncedLyric = subtitleList[0].subtitle.subtitle_body;
+                        const lyr = subtitleList[0].subtitle;
+                        response.syncedLyric = lyr.subtitle_body.split('\n');
+                        response.lang = lyr.subtitle_language;
                 }
         }
 
         const plainBody = body.macro_calls['track.lyrics.get'].message.body;
         if (plainBody && !Array.isArray(plainBody)) {
                 const lyr = plainBody.lyrics;
-                response.plainLyric = lyr.lyrics_body;
-                instrumental ??= lyr.instrumental || 0;
+                response.plainLyric = lyr.lyrics_body.split('\n');
+                response.instrumental ??= !!lyr.instrumental;
         }
 
-        if (instrumental && !response.plainLyric) {
-                response.plainLyric = 'Instrumental';
-        }
         if (!response.plainLyric && !response.syncedLyric) {
                 response.exception = {
                         code: 404,
@@ -85,5 +81,5 @@ export const fetchMusixMatch = async (playing: Playing): Promise<Lyric> => {
 
         // TODO: Add translations retriever
         
-        return await romanize(response);
+        return await romanizeLyrics(response);
 };

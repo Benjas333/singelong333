@@ -45,23 +45,29 @@
 
         function prepareLyrics(lyrics) {
             if (lyrics.syncedLyric) {
-                const lines = lyrics.syncedLyric.split("\n")
+                const lines = lyrics.syncedLyric;
                 globalLyrics = lines.map(line => {
                     const time = extractAndConvertToMilliseconds(line);
                     const lyric = line.split("]")[1].trim();
                     return { time: time, text: lyric || emptyVerse };
                 });
+                if (globalLyrics.length && globalLyrics[0].time !== 0)
+                    globalLyrics.unshift({ time: 0, text: emptyVerse });
             } else if (lyrics.plainLyric) {
-                const lines = lyrics.plainLyric.split("\n")
-                globalLyrics = lines.map(line => {
-                    const lyric = line.trim();
-                    return { time: null, text: lyric || emptyVerse };
-                })
+                const lines = lyrics.plainLyric;
+                if (lines.length && lyrics.instrumental) {
+                    globalLyrics = [{ time: 0, text: emptyVerse }];
+                } else {
+                    globalLyrics = lines.map(line => {
+                        const lyric = line.trim();
+                        return { time: null, text: lyric || emptyVerse };
+                    });
+                }
             }
 
             const provider = document.getElementById('lyrics-provider')
             if (provider)
-                provider.innerHTML = `Lyrics provider: ${lyrics.provider}` + (lyrics.syncedLyric ? '' : '(Not synced)');
+                provider.innerHTML = `Lyrics provider: ${lyrics.provider}` + (lyrics.syncedLyric ? '' : lyrics.instrumental ? ' (Instrumental)' : ' (Not synced)');
 
             const screen = document.getElementById("lyrics-content")
             screen.innerHTML = ''
@@ -87,7 +93,7 @@
         function setActiveLyric() {
             let index = -1
             globalLyrics.forEach(({ time, text }, idx) => {
-                if (!time) return;
+                if (time === null) return;
                 const item = document.getElementById(`${time}`)
                 if (globalProgress < time) {
                     item.classList.remove('text-light')
@@ -112,11 +118,11 @@
             
             // updateConsole(`Calculed index: ${index}`)
             // updateConsole(`Current index: ${currentIndex}`)
-            if (index < 0) document.getElementById('lyrics-content').scrollTo({ top: 0, behavior: 'smooth' });
+            // if (index < 0) document.getElementById('lyrics-content').scrollTo({ top: 0, behavior: 'smooth' });
             if (index == currentIndex) return;
 
             const lyric = globalLyrics[index];
-            if (!lyric || !lyric.time) return;
+            if (!lyric || lyric.time === null) return;
 
             const prev = document.querySelector('.actual-lyric');
             const node = document.getElementById(lyric.time);
@@ -144,7 +150,7 @@
             wrapWaveSpansFor(node);
 
             document.getElementById('lyrics-content').scrollTo({
-                top: document.getElementById(lyric.time).offsetTop + (document.getElementById(lyric.time).offsetHeight / 2) - (document.getElementById('lyrics-content').clientHeight / 2),
+                top: document.getElementById(lyric.time).offsetTop + (document.getElementById(lyric.time).offsetHeight / 2) - (document.getElementById('music-player').clientHeight / 2),
                 behavior: 'smooth'
             });
         }

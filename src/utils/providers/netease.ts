@@ -2,6 +2,7 @@ import axios from "axios";
 import { Lyric } from "../../types/lyric";
 import { Playing } from "../../types/playing";
 import { Provider } from "../../types/providers/common";
+import { romanizeLyrics } from "../romanize";
 
 
 export const fetchNetease = async (playing: Playing): Promise<Lyric> => {
@@ -142,8 +143,9 @@ export const fetchNetease = async (playing: Playing): Promise<Lyric> => {
                 return response;
         }
 
-        response.syncedLyric = lyrics.join("\n");
-        return response;
+        // TODO: plainLyric
+        response.syncedLyric = lyrics;
+        return await romanizeLyrics(response);
 };
 
 const Utils = {

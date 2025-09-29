@@ -42,7 +42,7 @@ body {
 #error {
         padding: var(--general-padding);
         max-width: 90vw;
-        width: 90vw;
+        /* width: 90vw; */
 }
 
 #error #message {
@@ -62,7 +62,7 @@ body {
 #lyrics-content {
         overflow-y: scroll;
         scroll-behavior: smooth;
-        height: 85vh;
+        max-height: 85vh;
         text-align: left;
         -ms-overflow-style: none;
         scrollbar-width: none;

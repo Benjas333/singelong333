@@ -3,7 +3,7 @@ import { Lyric } from "../../types/lyric";
 import { Playing } from "../../types/playing";
 import { Provider } from "../../types/providers/common";
 import { LrclibSearchSong } from "../../types/providers/lrclib";
-import { romanize } from "../romanize";
+import { romanizeLyrics } from "../romanize";
 
 
 export const fetchLRCLIB = async (playing: Playing): Promise<Lyric> => {
@@ -39,16 +39,24 @@ export const fetchLRCLIB = async (playing: Playing): Promise<Lyric> => {
 
         const closest = songs.find(song => song.syncedLyrics)
         if (closest) {
-                response.syncedLyric = closest.syncedLyrics
-                response.plainLyric = closest.plainLyrics
+                response.syncedLyric = closest.syncedLyrics?.split('\n')
+                response.plainLyric = closest.plainLyrics?.split('\n')
+                response.instrumental = closest.instrumental
+        } else {
+                response.instrumental = songs[0].instrumental
         }
         if (!response.plainLyric) {
                 const plain = songs.find(song => song.plainLyrics)
                 if (plain) {
-                        response.plainLyric = plain.plainLyrics
+                        response.plainLyric = plain.plainLyrics?.split('\n')
+                        response.instrumental ??= plain.instrumental
                 }
         }
         if (!response.syncedLyric && !response.plainLyric) {
+                if (response.instrumental) {
+                        response.plainLyric = [''];
+                        return response;
+                }
                 response.exception = {
                         code: 404,
                         message: 'No lyrics'
@@ -56,5 +64,5 @@ export const fetchLRCLIB = async (playing: Playing): Promise<Lyric> => {
                 return response;
         }
         
-        return await romanize(response);
+        return await romanizeLyrics(response);
 };
