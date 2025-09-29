@@ -6,10 +6,20 @@ All notable changes to the "singelong333" extension will be documented in this f
 
 ## [Unreleased]
 
+## [1.3.1] - 2025-09-29
+
+### Added
+
+- Kuromoji assets
+
 ### Changed
 
 - lint script now includes --fix
 - Minor changes
+
+### Fixed
+
+- Kuromoji dict import
 
 ## [1.3.0] - 2025-09-29
 

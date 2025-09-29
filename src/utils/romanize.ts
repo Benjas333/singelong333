@@ -11,18 +11,34 @@ import { detect } from "tinyld";
 import * as vscode from "vscode";
 import { Lyric } from "../types/lyric";
 
-const kuroshiro = lazy(async () => {
-        const _kuroshiro = new Kuroshiro();
-        await _kuroshiro.init(
-                // new KuromojiAnalyzer({ dictPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/" })
-                new KuromojiAnalyzer()
+// const kuroshiro = lazy(async () => {
+//         const _kuroshiro = new Kuroshiro();
+//         await _kuroshiro.init(
+//                 // new KuromojiAnalyzer({ dictPath: "https://cdn.jsdelivr.net/npm/kuromoji@0.1.2/dict/" })
+//                 new KuromojiAnalyzer()
+//         );
+//         return _kuroshiro;
+// });
+
+const kuroshiro = new Kuroshiro();
+
+export const initializeKuroshiro = async (extensionUri: vscode.Uri) => {
+        await kuroshiro.init(
+                new KuromojiAnalyzer({
+                        dictPath: vscode.Uri.joinPath(
+                                extensionUri,
+                                "assets",
+                                "kuromoji"
+                        ).fsPath,
+                })
         );
-        return _kuroshiro;
-});
+};
 
 let _notified = false;
 const notify = (lang: string) => {
-        if (_notified) {return;}
+        if (_notified) {
+                return;
+        }
 
         _notified = true;
         vscode.window.showInformationMessage(
@@ -47,7 +63,9 @@ const hasThai = (line: string) => {
 };
 
 export const romanizeLyrics = async (lyric: Lyric): Promise<Lyric> => {
-        if (lyric.exception) {return lyric;}
+        if (lyric.exception) {
+                return lyric;
+        }
 
         if (lyric.syncedLyric) {
                 const lines = lyric.syncedLyric;
@@ -56,14 +74,17 @@ export const romanizeLyrics = async (lyric: Lyric): Promise<Lyric> => {
                                 const match = line
                                         .trim()
                                         .match(/\[\d+:\d+.\d+\] (.*)/);
-                                if (match === null || match.length < 2)
-                                        {return line;}
+                                if (match === null || match.length < 2) {
+                                        return line;
+                                }
 
                                 const converted = await romanizeText(
                                         match[1],
                                         lyric.lang
                                 );
-                                if (converted === match[1]) {return line;}
+                                if (converted === match[1]) {
+                                        return line;
+                                }
                                 return line.replace(match[1], converted);
                         })
                 );
@@ -86,7 +107,9 @@ export const romanizeLyrics = async (lyric: Lyric): Promise<Lyric> => {
         return lyric;
 };
 const romanizeText = async (line: string, lang?: string) => {
-        if (!line.trim().length) {return line;}
+        if (!line.trim().length) {
+                return line;
+        }
 
         const used_lang = lang ?? detect(line);
 
@@ -128,9 +151,7 @@ const romanizeJapanese = async (text: string): Promise<string> => {
 
         try {
                 return (
-                        (await (
-                                await kuroshiro.get()
-                        ).convert(text, {
+                        (await kuroshiro.convert(text, {
                                 to: "romaji",
                                 mode: "spaced",
                                 // romajiSystem: 'passport'
@@ -166,7 +187,9 @@ const romanizeThai = async (line: string) => {
 
         const romanizeThaiFrag = await romanizeThaiFragPromise;
 
-        if (!thaiSegmenter) {return romanizeThaiFrag(line);}
+        if (!thaiSegmenter) {
+                return romanizeThaiFrag(line);
+        }
 
         const segments = Array.from(thaiSegmenter.segment(line));
         const latin = segments.map((segment) =>
