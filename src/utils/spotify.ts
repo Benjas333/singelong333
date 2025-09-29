@@ -24,19 +24,19 @@ const refreshToken = async (refresh_Token: string): Promise<Auth> => {
         );
 
         const data = response.data;
-        return { accessToken: data.access_token, refreshToken: data.refresh_token || refresh_Token, expiredIn: Date.now() + data.expires_in }
+        return { accessToken: data.access_token, refreshToken: data.refresh_token || refresh_Token, expiredIn: Date.now() + data.expires_in };
     }
     catch (e) {
         const message = `Refreshing token failed: ${e}`;
         if (/status code 5\d{2}/.test(message)) {
             vscode.window.showErrorMessage(`${message} Retrying in 5 seconds...`);
-            await new Promise(resolve => setTimeout(resolve, 5000))
-            return await refreshToken(refresh_Token)
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            return await refreshToken(refresh_Token);
         }
         vscode.window.showErrorMessage(message);
-        return { exception: { code: 401, message } }
+        return { exception: { code: 401, message } };
     }
-}
+};
 
 const getToken = async (code: string): Promise<Auth> => {
     try {
@@ -54,14 +54,14 @@ const getToken = async (code: string): Promise<Auth> => {
         );
 
         const data = response.data;
-        return { accessToken: data.access_token, refreshToken: data.refresh_token, expiredIn: Date.now() + data.expires_in }
+        return { accessToken: data.access_token, refreshToken: data.refresh_token, expiredIn: Date.now() + data.expires_in };
     }
     catch (e) {
         const message = `Get access token failed: ${e}`;
         vscode.window.showErrorMessage(message);
-        return { exception: { code: 401, message } }
+        return { exception: { code: 401, message } };
     }
-}
+};
 
 const getNowPlaying = async (token: string): Promise<Playing> => {
     try {
@@ -69,23 +69,23 @@ const getNowPlaying = async (token: string): Promise<Playing> => {
             {
                 headers: { "Authorization": `Bearer ${token}` }
             }
-        )
+        );
 
         const data = response.data;
 
-        if (data.error) return { exception: { code: data.error.status, message: data.error.message } }
-        if (!data.item) return { exception: { code: 404, message: 'No song is currently playing' } }
-        if (data.item.artists.length == 0) return { exception: { code: 404, message: 'Failed to fetch artist name' } }
-        return { id: data.item.id, artistName: data.item.artists[0].name, songTitle: data.item.name, currentProgress: data.progress_ms, albumName: data.item.album.name }
+        if (data.error) {return { exception: { code: data.error.status, message: data.error.message } };}
+        if (!data.item) {return { exception: { code: 404, message: 'No song is currently playing' } };}
+        if (data.item.artists.length === 0) {return { exception: { code: 404, message: 'Failed to fetch artist name' } };}
+        return { id: data.item.id, artistName: data.item.artists[0].name, songTitle: data.item.name, currentProgress: data.progress_ms, albumName: data.item.album.name };
     } catch (e) {
         const message = `Get now playing failed: ${e}`;
         vscode.window.showErrorMessage(message);
-        return { exception: { code: 404, message } }
+        return { exception: { code: 404, message } };
     }
-}
+};
 
 const getAuthorizationCode = (): void => {
     vscode.env.openExternal(vscode.Uri.parse(`https://accounts.spotify.com/en/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=user-read-playback-state`));
-}
+};
 
-export { refreshToken, getToken, getNowPlaying, getAuthorizationCode }
+export { refreshToken, getToken, getNowPlaying, getAuthorizationCode };

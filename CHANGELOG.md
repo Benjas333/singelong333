@@ -6,6 +6,11 @@ All notable changes to the "singelong333" extension will be documented in this f
 
 ## [Unreleased]
 
+### Changed
+
+- lint script now includes --fix
+- Minor changes
+
 ## [1.3.0] - 2025-09-29
 
 ### Added

@@ -31,6 +31,6 @@ declare module "kuroshiro" {
                         kanaToHiragna: (text: string) => string
                         kanaToKatakana: (text: string) => string
                         kanaToRomaji: (text: string, system: RomanizationSystem) => string
-                }
+                };
         }
 }

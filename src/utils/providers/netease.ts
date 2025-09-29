@@ -101,7 +101,7 @@ export const fetchNetease = async (playing: Playing): Promise<Lyric> => {
                                         Utils.normalize(text, false)
                                 );
                         }
-                        if (text === "纯音乐, 请欣赏") noLyrics = true;
+                        if (text === "纯音乐, 请欣赏") {noLyrics = true;}
                         return matchResult.map((slice) => {
                                 const matchResult = slice.match(/[^\[\]]+/g);
                                 const [key, value] =

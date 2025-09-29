@@ -30,7 +30,7 @@ export const fetchMusixMatch = async (playing: Playing): Promise<Lyric> => {
                 response.exception = {
                         code: err.response?.status ?? 404,
                         message: err.response ? `${err.response.data}` : err.message
-                }
+                };
                 return response;
         }
         const data = result.data;
@@ -44,7 +44,7 @@ export const fetchMusixMatch = async (playing: Playing): Promise<Lyric> => {
                 return response;
         }
 
-        const header = data.message.header
+        const header = data.message.header;
         if (header.status_code !== 200) {
                 response.exception = {
                         code: header.status_code,
@@ -75,7 +75,7 @@ export const fetchMusixMatch = async (playing: Playing): Promise<Lyric> => {
                 response.exception = {
                         code: 404,
                         message: 'No lyrics'
-                }
+                };
                 return response;
         }
 

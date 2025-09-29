@@ -22,7 +22,7 @@ const kuroshiro = lazy(async () => {
 
 let _notified = false;
 const notify = (lang: string) => {
-        if (_notified) return;
+        if (_notified) {return;}
 
         _notified = true;
         vscode.window.showInformationMessage(
@@ -47,7 +47,7 @@ const hasThai = (line: string) => {
 };
 
 export const romanizeLyrics = async (lyric: Lyric): Promise<Lyric> => {
-        if (lyric.exception) return lyric;
+        if (lyric.exception) {return lyric;}
 
         if (lyric.syncedLyric) {
                 const lines = lyric.syncedLyric;
@@ -57,13 +57,13 @@ export const romanizeLyrics = async (lyric: Lyric): Promise<Lyric> => {
                                         .trim()
                                         .match(/\[\d+:\d+.\d+\] (.*)/);
                                 if (match === null || match.length < 2)
-                                        return line;
+                                        {return line;}
 
                                 const converted = await romanizeText(
                                         match[1],
                                         lyric.lang
                                 );
-                                if (converted === match[1]) return line;
+                                if (converted === match[1]) {return line;}
                                 return line.replace(match[1], converted);
                         })
                 );
@@ -86,7 +86,7 @@ export const romanizeLyrics = async (lyric: Lyric): Promise<Lyric> => {
         return lyric;
 };
 const romanizeText = async (line: string, lang?: string) => {
-        if (!line.trim().length) return line;
+        if (!line.trim().length) {return line;}
 
         const used_lang = lang ?? detect(line);
 
@@ -166,7 +166,7 @@ const romanizeThai = async (line: string) => {
 
         const romanizeThaiFrag = await romanizeThaiFragPromise;
 
-        if (!thaiSegmenter) return romanizeThaiFrag(line);
+        if (!thaiSegmenter) {return romanizeThaiFrag(line);}
 
         const segments = Array.from(thaiSegmenter.segment(line));
         const latin = segments.map((segment) =>

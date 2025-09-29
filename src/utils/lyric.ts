@@ -6,8 +6,8 @@ import { fetchLRCLIB } from "./providers/lrclib";
 
 const logProviderResponse = (response: Lyric) => {
     const func = response.exception ? console.warn : console.info;
-    func(response)
-}
+    func(response);
+};
 
 
 export const getLyric = async (playing: Playing): Promise<Lyric> => {
@@ -54,8 +54,8 @@ export const getLyric = async (playing: Playing): Promise<Lyric> => {
         }
 
 
-        throw `Lyrics not found in any provider for: ${playing.songTitle} (${playing.artistName})`;
+        throw new Error(`Lyrics not found in any provider for: ${playing.songTitle} (${playing.artistName})`);
     } catch (e: any) {
         return { id: playing.id, exception: { code: 404, message: `${e?.stack ?? e}` } };
     }
-}
+};

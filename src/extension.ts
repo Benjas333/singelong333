@@ -27,14 +27,14 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(logout);
 
 	// creating panel
-	const panelProvider = vscode.window.registerWebviewViewProvider(SingeLongViewProvider.viewType, provider)
+	const panelProvider = vscode.window.registerWebviewViewProvider(SingeLongViewProvider.viewType, provider);
 	context.subscriptions.push(panelProvider);
 
-	const reload = vscode.commands.registerCommand('singelong333.reload-panel', () => reloadPanel())
+	const reload = vscode.commands.registerCommand('singelong333.reload-panel', () => reloadPanel());
 	context.subscriptions.push(reload);
 
 	// listen updates
-	setInterval(listener, 1000)
+	setInterval(listener, 1000);
 }
 
 const authorize = async () => {
@@ -42,9 +42,9 @@ const authorize = async () => {
 	const app = express();
 
 	app.get("/callback", async (req: Request, res: Response) => {
-		const contentUri = vscode.Uri.joinPath(extensionUri, "assets", "close.html")
+		const contentUri = vscode.Uri.joinPath(extensionUri, "assets", "close.html");
 		const content = fs.readFileSync(contentUri.fsPath, 'utf-8');
-		const code = req.query.code
+		const code = req.query.code;
 
 		extensionContext.globalState.update("code", code);
 		await requestAccessToken();
@@ -58,14 +58,14 @@ const authorize = async () => {
 
 	// open url to retrive spotify authorization code
 	spotify.getAuthorizationCode();
-}
+};
 
 const signOut = async () => extensionContext.globalState.update("auth", null);
 
 const reloadPanel = () => {
 	provider.reloadContent();
-	setTimeout(() => extensionContext.globalState.update('lyric', null), 2500)
-}
+	setTimeout(() => extensionContext.globalState.update('lyric', null), 2500);
+};
 
 const requestAccessToken = async (): Promise<Auth> => {
 	const timestamp = Date.now();
@@ -78,22 +78,22 @@ const requestAccessToken = async (): Promise<Auth> => {
 	const isTokenExist = (auth?.accessToken != null);
 
 	if (isTokenExpired) {
-		const data = await spotify.refreshToken(refreshToken)
-		if (data.exception) provider.view?.webview.postMessage({ 'command': 'error', 'message': data.exception.message });
+		const data = await spotify.refreshToken(refreshToken);
+		if (data.exception) {provider.view?.webview.postMessage({ 'command': 'error', 'message': data.exception.message });}
 		extensionContext.globalState.update("auth", data);
 		return data;
 	}
 
 	if (!isTokenExist) {
 		const data = await spotify.getToken(code || '');
-		if (data.exception) provider.view?.webview.postMessage({ 'command': 'error', 'message': data.exception.message });
+		if (data.exception) {provider.view?.webview.postMessage({ 'command': 'error', 'message': data.exception.message });}
 		extensionContext.globalState.update("auth", data);
 		return data;
 	}
 
 	extensionContext.globalState.update("auth", auth);
 	return auth;
-}
+};
 
 const listener = async () => {
 	let auth = extensionContext.globalState.get<Auth>('auth');
@@ -104,7 +104,7 @@ const listener = async () => {
 		return;
 	}
 
-	auth = await requestAccessToken()
+	auth = await requestAccessToken();
 	let lyricData: Lyric;
 	const lyricCoolDown = extensionContext.globalState.get<number>('cooldown') || 0;
 	let lyricState = extensionContext.globalState.get<Lyric>('lyric');
@@ -118,7 +118,7 @@ const listener = async () => {
 	provider.view?.webview.postMessage({
 		'command': 'updateProgress',
 		'content': playing.currentProgress
-	})
+	});
 
 	const retrieveLyrics = (
 		lyricState?.id !== playing.id
@@ -126,11 +126,11 @@ const listener = async () => {
 			lyricState?.exception
 			&& timestamp >= lyricCoolDown
 		)
-	)
+	);
 
 	if (!alreadyFetchingLyrics && (!lyricState || retrieveLyrics)) {
 		alreadyFetchingLyrics = true;
-		console.log(`Retrieving lyrics for: ${playing.songTitle} (${playing.artistName})`)
+		console.log(`Retrieving lyrics for: ${playing.songTitle} (${playing.artistName})`);
 		extensionContext.globalState.update('cooldown', Date.now() + 30000);
 		lyricData = await lyric.getLyric(playing);
 		
@@ -140,7 +140,7 @@ const listener = async () => {
 		provider.view?.webview.postMessage({
 			'command': 'updateLyrics',
 			'content': lyricState
-		})
+		});
 		alreadyFetchingLyrics = false;
 	}
 	
@@ -155,6 +155,6 @@ const listener = async () => {
 	// 		'milliseconds': playing.currentProgress
 	// 	}
 	// })
-}
+};
 
 export function deactivate() { }

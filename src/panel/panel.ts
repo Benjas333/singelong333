@@ -36,7 +36,7 @@ export class SingeLongViewProvider implements vscode.WebviewViewProvider {
     }
 
     public reloadContent() {
-        if (!this.view) return;
+        if (!this.view) {return;}
         const contentUri = this.view.webview.asWebviewUri(this.indexContentUri);
         let content = this.getHtmlContent(contentUri);
 
@@ -44,7 +44,7 @@ export class SingeLongViewProvider implements vscode.WebviewViewProvider {
         const particlesUri = this.view.webview.asWebviewUri(this.particles);
         content = content.replace('{{STYLE_URI}}', `${stylesheetUri}`).replace('{{PARTICLES_URI}}', `${particlesUri}`);
 
-        this.view.webview.html = content
+        this.view.webview.html = content;
     }
 
     private getHtmlContent(contentUri: vscode.Uri): string {
